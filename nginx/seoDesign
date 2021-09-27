@@ -1,0 +1,181 @@
+upstream project_configurator {
+        server 10.211.70.96:8351;
+}
+
+upstream seo_phoenix {
+        server 10.211.70.96:8150;
+}
+
+upstream seo_photosite {
+        server 10.211.70.96:8250;
+}
+
+upstream asset_service {
+        server 10.211.70.96:6602;
+}
+
+proxy_connect_timeout 3600s;
+proxy_send_timeout    3600s;
+proxy_read_timeout    3600s;
+send_timeout          3600s;
+
+server {
+        listen 0.0.0.0:80;
+        listen [::]:80;
+        server_name local-design.staples.com;
+        large_client_header_buffers 4 32k;
+        return 302 https://$server_name$request_uri;
+}
+
+server {
+        listen 443 ssl;
+        listen [::]:443 ssl;
+        server_name local-design.staples.com;
+        large_client_header_buffers 4 32k;
+
+        #charset koi8-r;
+        access_log /var/log/nginx/seoDesign.log;
+        error_log  /var/log/nginx/seoDesign_error.log;
+
+        ssl_certificate      /etc/ssl/certs/local-design.crt;
+        ssl_certificate_key  /etc/ssl/private/local-design.key;
+        ssl_protocols        TLSv1.1 TLSv1.2;
+        ssl_ciphers          HIGH:!aNULL:!MD5;
+
+        proxy_buffer_size 128k;
+        proxy_buffers 4 256k;
+        proxy_busy_buffers_size 256k;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Accept-Encoding "";
+
+        location ~* /project-configurator/ {
+              proxy_pass https://project_configurator;
+              proxy_redirect off;
+        }
+        
+        location ~* /services/printing/addfinishings/group {                
+                if ($http_cookie ~* "newupsell=true") {
+                     rewrite /services/printing/.+/group/([0-9]+)/.*   /project-configurator/phoenix/$1   break;
+                     proxy_pass https://project_configurator;
+                }
+
+                if ($http_cookie !~* "newupsell=true") {
+                     proxy_pass http://seo_phoenix;                     
+               }
+        }
+
+
+        location ~* /services/printing/content/images/retailerspecific/SPLUS/cart-icon {
+                proxy_pass http://seo_phoenix;
+                proxy_redirect off;
+        }
+
+        location ~* /services/printing/api/v3/cart {
+                proxy_pass http://seo_phoenix;
+                proxy_redirect off;
+        }
+
+        location ~* /services/printing/cart {
+                proxy_pass http://seo_photosite;
+                proxy_redirect off;
+        }
+
+        location ~* /services/printing/app_themes {
+                proxy_pass http://seo_photosite;
+                proxy_redirect off;
+        }
+
+        location ~* /services/printing/mediaservice {
+                proxy_pass http://seo_photosite;
+                proxy_redirect off;
+        }
+
+        location ~* /services/printing/upload {
+                proxy_pass http://seo_photosite;
+                proxy_redirect off;
+        }
+
+        location ~* /services/printing/upload/controls {
+                proxy_pass http://seo_photosite;
+                proxy_redirect off;
+        }
+
+
+        location ~* /services/printing/gift {
+                proxy_pass http://seo_photosite;
+                proxy_redirect off;
+        }
+
+        location ~* /services/printing/giftbuilder {
+                proxy_pass http://seo_photosite;
+                proxy_redirect off;
+        }
+
+        location ~* /services/printing/pc.webservices {
+                proxy_pass http://seo_photosite;
+                proxy_redirect off;
+        }
+
+        location ~* /services/printing/scriptResource {
+                proxy_pass http://seo_photosite;
+                proxy_redirect off;
+        }
+
+        location ~* /services/printing/webresource {
+                proxy_pass http://seo_photosite;
+                proxy_redirect off;
+        }
+
+        location ~* /services/printing/whats-new {
+                proxy_pass http://seo_photosite;
+                proxy_redirect off;
+        }
+
+        location ~* /services/printing/inspiration {
+                proxy_pass http://seo_photosite;
+                proxy_redirect off;
+        }
+
+        location ~* /services/printing/legacy {
+                proxy_pass http://seo_photosite;
+                proxy_redirect off;
+        }
+
+        location ~* /services/printing/email {
+                proxy_pass http://seo_photosite;
+                proxy_redirect off;
+        }
+
+        location ~* /services/printing/error {
+                proxy_pass http://seo_photosite;
+                proxy_redirect off;
+        }
+
+        location ~* /services/printing/myaccount {
+                proxy_pass http://seo_photosite;
+                proxy_redirect off;
+        }
+
+        location ~* /services/printing/login {
+                proxy_pass http://seo_photosite;
+                proxy_redirect off;
+        }
+
+
+        location ~* /services/printing/orderstatus {
+                proxy_pass http://seo_photosite;
+                proxy_redirect off;
+        }
+
+        location ~* /services/printing {
+                proxy_pass http://seo_phoenix;
+                proxy_redirect off;
+        }
+
+        location / {
+                proxy_pass http://asset_service;
+                proxy_redirect off;
+        }
+}
